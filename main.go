@@ -15,95 +15,47 @@ import (
 )
 
 const (
+	stiker      = "stiker.png"
 	stikercent  = "cetn.png"
 	stikerbok   = "chert.png"
 	watermarked = "watermarked.jpeg"
 	webhook     = "https://photosotabot.herokuapp.com/"
 )
 
-const (
-	cb = "1"
-	cw = "2"
-	cg = "3"
-	sb = "4"
-	sw = "5"
-	sg = "6"
-)
-
-
 func main() {
 
 	port := os.Getenv("PORT")
+
 	go func() {
 		log.Fatal(http.ListenAndServe(":"+port, nil))
 	}()
+
 	bot, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
 		log.Fatal("creating bot:", err)
 	}
 	log.Println("bot created")
+
 	if _, err = bot.SetWebhook(tgbotapi.NewWebhook(webhook)); err != nil {
 		log.Fatalf("setting webhook %v: %v", webhook, err)
 	}
 	log.Println("webhook set")
+
 	updates := bot.ListenForWebhook("/")
+
 	//bot.Debug = true
-	log.Printf("Authorized on account %s", bot.Self.UserName)
+	//log.Printf("Authorized on account %s", bot.Self.UserName)
 	//u := tgbotapi.NewUpdate(0)
 	//u.Timeout = 60
 	//updates, err := bot.GetUpdatesChan(u)
-	type usersState struct {
-		id int
-		command string
-	}
-	users:= make([]usersState, 5, 25)
-
 	for update := range updates {
-
 		if update.Message == nil { // ignore any non-Message Updates
 			continue
 		}
+
 		if (update.Message.Text) != "" {
 			continue
 		}
-
-		exist := -1
-
-		if update.Message.IsCommand() {
-
-			for i := range users {
-				if users[i].id == update.Message.From.ID {
-					exist = i
-				}
-			}
-
-			if exist != -1 {
-				users[exist].command = update.Message.Command()
-			} else {
-				nowuser := usersState{
-					id:      update.Message.From.ID,
-					command: update.Message.Command(),
-				}
-				users = append(users, nowuser)
-			}
-
-			continue
-		}
-
-		var no tgbotapi.PhotoSize
-		if (*update.Message.Photo)[0] == no {
-			println("not a photo")
-			continue
-		}
-
-		for i := range users {
-			if users[i].id == update.Message.From.ID {
-				exist = i
-			}
-		}
-
-		var varstick string
-		var offsetX, offsetY int
 
 		leng := len(*update.Message.Photo)
 		phUrl, err := bot.GetFileDirectURL((*update.Message.Photo)[leng-1].FileID)
@@ -112,33 +64,24 @@ func main() {
 		if err != nil {
 			err.Error()
 		}
+
 		imgb, _ := os.Open(filename)
 		img, _ := jpeg.Decode(imgb)
 		defer imgb.Close()
 
-
-		com:= users[exist].command
-		switch com {
-			case cb:
-
-			case cw:
-				varstick = stikerbok
-			case cg:
-
-			case sb:
-
-			case sw:
-				varstick = stikerbok
-			case sg:
-
-			default:
-				varstick = stikerbok
-
+		var varstick string
+		var offsetX, offsetY int
+		pos := update.Message.Caption
+		if pos == "1" {
+			varstick = stikerbok
+		} else if pos == "2" {
+			varstick = stikercent
+		} else {
+			varstick = stikerbok
 		}
 
 		widthF, heightF := getImageDimension(filename)
 		widthS, heightS := getImageDimension(varstick)
-
 
 		switch varstick {
 		case stikerbok:
@@ -151,6 +94,7 @@ func main() {
 			offsetX = 0
 			offsetY = heightF - heightS
 		}
+
 		wmb, _ := os.Open(varstick)
 		watermark, _ := png.Decode(wmb)
 		defer wmb.Close()
@@ -162,6 +106,7 @@ func main() {
 		draw.Draw(m, watermark.Bounds().Add(offset), watermark, image.ZP, draw.Over)
 
 		imgw, _ := os.Create(watermarked)
+		//png.Encode(imgw,m)
 		err = jpeg.Encode(imgw, m, &jpeg.Options{jpeg.DefaultQuality})
 		if err != nil {
 			err.Error()
@@ -169,14 +114,12 @@ func main() {
 		}
 		defer imgw.Close()
 
+		//msg:= tgbotapi.NewPhotoUpload(update.Message.Chat.ID,"watermark-new-stiker.png")
 		msg := tgbotapi.NewPhotoUpload(update.Message.Chat.ID, "watermarked.jpeg")
 		msg.ReplyToMessageID = update.Message.MessageID
 		bot.Send(msg)
-		users[exist].command = ""
 
-
-
-
+		//prevname = filename
 	}
 }
 
@@ -218,3 +161,24 @@ func DownloadFile(URL, fileName string) error {
 
 	return nil
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
