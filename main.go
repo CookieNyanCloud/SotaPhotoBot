@@ -15,7 +15,6 @@ import (
 )
 
 const (
-	stiker      = "stiker.png"
 	stikercent  = "cetn.png"
 	stikerbok   = "chert.png"
 	watermarked = "watermarked.jpeg"
@@ -43,20 +42,16 @@ func main() {
 		log.Fatal("creating bot:", err)
 	}
 	log.Println("bot created")
-
 	if _, err = bot.SetWebhook(tgbotapi.NewWebhook(webhook)); err != nil {
 		log.Fatalf("setting webhook %v: %v", webhook, err)
 	}
 	log.Println("webhook set")
 	updates := bot.ListenForWebhook("/")
-
-	bot.Debug = true
+	//bot.Debug = true
 	log.Printf("Authorized on account %s", bot.Self.UserName)
-
 	//u := tgbotapi.NewUpdate(0)
 	//u.Timeout = 60
 	//updates, err := bot.GetUpdatesChan(u)
-
 	type usersState struct {
 		id int
 		command string
@@ -71,7 +66,6 @@ func main() {
 		if (update.Message.Text) != "" {
 			continue
 		}
-
 
 		exist := -1
 
@@ -178,6 +172,7 @@ func main() {
 		msg := tgbotapi.NewPhotoUpload(update.Message.Chat.ID, "watermarked.jpeg")
 		msg.ReplyToMessageID = update.Message.MessageID
 		bot.Send(msg)
+		users[exist].command = ""
 
 
 
