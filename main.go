@@ -15,18 +15,19 @@ import (
 )
 
 const (
-	stiker = "stiker.png"
-	stikercent = "cetn.png"
-	stikerbok = "chert.png"
-	watermarked ="watermarked.jpeg"
-	webhook ="https://photosotabot.herokuapp.com/"
+	stiker      = "stiker.png"
+	stikercent  = "cetn.png"
+	stikerbok   = "chert.png"
+	watermarked = "watermarked.jpeg"
+	webhook     = "https://photosotabot.herokuapp.com/"
 )
+
 func main() {
 
-	port:= os.Getenv("PORT")
+	port := os.Getenv("PORT")
 
-	go func(){
-		log.Fatal(http.ListenAndServe(":"+port,nil))
+	go func() {
+		log.Fatal(http.ListenAndServe(":"+port, nil))
 	}()
 
 	bot, err := tgbotapi.NewBotAPI(token)
@@ -35,14 +36,12 @@ func main() {
 	}
 	log.Println("bot created")
 
-	if _, err = bot.SetWebhook(tgbotapi.NewWebhook(webhook)); err!=nil {
+	if _, err = bot.SetWebhook(tgbotapi.NewWebhook(webhook)); err != nil {
 		log.Fatalf("setting webhook %v: %v", webhook, err)
 	}
 	log.Println("webhook set")
 
-	updates:= bot.ListenForWebhook("/")
-
-
+	updates := bot.ListenForWebhook("/")
 
 	//bot.Debug = true
 	//log.Printf("Authorized on account %s", bot.Self.UserName)
@@ -58,31 +57,27 @@ func main() {
 			continue
 		}
 
-
-		leng:=len(*update.Message.Photo)
-		phUrl, err:= bot.GetFileDirectURL((*update.Message.Photo)[leng-1].FileID)
-		filename:="new.jpg"
-		err = DownloadFile(phUrl,filename)
+		leng := len(*update.Message.Photo)
+		phUrl, err := bot.GetFileDirectURL((*update.Message.Photo)[leng-1].FileID)
+		filename := "new.jpg"
+		err = DownloadFile(phUrl, filename)
 		if err != nil {
 			err.Error()
 		}
-
-
 
 		imgb, _ := os.Open(filename)
 		img, _ := jpeg.Decode(imgb)
 		defer imgb.Close()
 
-
 		var varstick string
 		var offsetX, offsetY int
-		pos:=update.Message.Caption
+		pos := update.Message.Caption
 		if pos == "1" {
 			varstick = stikerbok
 		} else if pos == "2" {
 			varstick = stikercent
 		} else {
-			varstick = stiker
+			varstick = stikerbok
 		}
 
 		widthF, heightF := getImageDimension(filename)
@@ -91,15 +86,14 @@ func main() {
 		switch varstick {
 		case stikerbok:
 			offsetX = 0
-			offsetY = heightF-heightS
+			offsetY = heightF - heightS
 		case stikercent:
-			offsetX = (widthF/2) - (widthS/2)
-			offsetY = (heightF/2) - (heightS/2)
+			offsetX = (widthF / 2) - (widthS / 2)
+			offsetY = (heightF / 2) - (heightS / 2)
 		default:
 			offsetX = 0
-			offsetY = heightF-heightS
+			offsetY = heightF - heightS
 		}
-
 
 		wmb, _ := os.Open(varstick)
 		watermark, _ := png.Decode(wmb)
@@ -120,18 +114,14 @@ func main() {
 		}
 		defer imgw.Close()
 
-
-
 		//msg:= tgbotapi.NewPhotoUpload(update.Message.Chat.ID,"watermark-new-stiker.png")
-		msg:= tgbotapi.NewPhotoUpload(update.Message.Chat.ID,"watermarked.jpeg")
+		msg := tgbotapi.NewPhotoUpload(update.Message.Chat.ID, "watermarked.jpeg")
 		msg.ReplyToMessageID = update.Message.MessageID
 		bot.Send(msg)
-
 
 		//prevname = filename
 	}
 }
-
 
 func getImageDimension(imagePath string) (int, int) {
 	file, err := os.Open(imagePath)
@@ -171,4 +161,3 @@ func DownloadFile(URL, fileName string) error {
 
 	return nil
 }
-
