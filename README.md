@@ -1,0 +1,2 @@
+# SotaPhotoBot
+bot for sota
