@@ -107,6 +107,7 @@ func main() {
 			if users[i].name == update.Message.From.UserName {
 				exist = i
 			}
+
 		}
 
 		var varstick string
