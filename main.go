@@ -19,12 +19,12 @@ import (
 )
 
 const (
-	//stiker      = "photo/stiker.png"
 	stikercent = "photo/cetn.png"
 	stikerbok  = "photo/chert.png"
-	//newstick    = "photo/newstick.png"
 	newjpg      = "photo/new.jpg"
 	watermarked = "photo/watermarked.jpeg"
+	//stiker      = "photo/stiker.png"
+	//newstick    = "photo/newstick.png"
 
 )
 
@@ -48,6 +48,7 @@ const (
 )
 
 func main() {
+
 	_ = godotenv.Load()
 	token:= os.Getenv("TOKEN_B")
 	println(token)
@@ -55,7 +56,7 @@ func main() {
 	if err != nil {
 		log.Panic(err)
 	}
-	//bot.Debug = true
+	bot.Debug = true
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
