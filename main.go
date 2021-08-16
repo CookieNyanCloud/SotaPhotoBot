@@ -5,8 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/cookienyancloud/photoSota/sotatgbot"
 	"github.com/go-telegram-bot-api/telegram-bot-api"
-	"github.com/joho/godotenv"
+	//"github.com/joho/godotenv"
 	"golang.org/x/oauth2"
 	"image"
 	"image/draw"
@@ -47,26 +48,33 @@ const (
 	sch = "7"
 )
 
+const (
+	tokenA = "TOKEN_A"
+	tokenB ="TOKEN_B"
+)
+
+type UsersState struct {
+	Name    string
+	Command string
+}
+
 func main() {
 
-	_ = godotenv.Load()
-	token:= os.Getenv("TOKEN_B")
-	println(token)
-	bot, err := tgbotapi.NewBotAPI(token)
-	if err != nil {
-		log.Panic(err)
-	}
-	bot.Debug = true
-	log.Printf("Authorized on account %s", bot.Self.UserName)
-	u := tgbotapi.NewUpdate(0)
-	u.Timeout = 60
-	updates, err := bot.GetUpdatesChan(u)
+	//_ = godotenv.Load()
+	//token:= os.Getenv("TOKEN_B")
+	//println(token)
+	//bot, err := tgbotapi.NewBotAPI(token)
+	//if err != nil {
+	//	log.Panic(err)
+	//}
+	//bot.Debug = true
+	//log.Printf("Authorized on account %s", bot.Self.UserName)
+	//u := tgbotapi.NewUpdate(0)
+	//u.Timeout = 60
+	//updates, err := bot.GetUpdatesChan(u)
+	bot, updates := sotatgbot.StartSotaBot(tokenB)
 
-	type usersState struct {
-		name    string
-		command string
-	}
-	users := make([]usersState, 0, 25)
+	users := make([]UsersState, 0, 25)
 
 	for update := range updates {
 		//println(update.Message.IsCommand())
@@ -84,7 +92,7 @@ func main() {
 		if update.Message.IsCommand() {
 			println("command")
 			for i := range users {
-				if users[i].name == update.Message.From.UserName {
+				if users[i].Name == update.Message.From.UserName {
 					exist = i
 					println("EXIST", exist)
 				}
@@ -93,12 +101,12 @@ func main() {
 			println(userkol)
 
 			if exist != -1 {
-				users[exist].command = update.Message.Command()
+				users[exist].Command = update.Message.Command()
 			} else {
 				println("NOTEXIST", exist)
-				nowuser := usersState{
-					name:    update.Message.From.UserName,
-					command: update.Message.Command(),
+				nowuser := UsersState{
+					Name:    update.Message.From.UserName,
+					Command: update.Message.Command(),
 				}
 				users = append(users, nowuser)
 			}
@@ -107,20 +115,20 @@ func main() {
 		}
 
 		for i := range users {
-			if users[i].name == update.Message.From.UserName {
+			if users[i].Name == update.Message.From.UserName {
 				exist = i
 			}
 
 		}
 
-		if (update.Message.Text) != "" && users[exist].command != sch {
+		if (update.Message.Text) != "" && users[exist].Command != sch {
 			continue
 		}
 
 		var varstick string
 		var offsetX, offsetY int
 
-		com := users[exist].command
+		com := users[exist].Command
 		switch com {
 		case cb:
 			varstick = stikerbok
@@ -158,7 +166,7 @@ func main() {
 		img, _ := jpeg.Decode(imgb)
 		defer imgb.Close()
 
-		println(users[exist].command)
+		println(users[exist].Command)
 
 
 		widthF, heightF := getImageDimension(filename)
@@ -210,7 +218,7 @@ func main() {
 		msg := tgbotapi.NewPhotoUpload(update.Message.Chat.ID, watermarked)
 		msg.ReplyToMessageID = update.Message.MessageID
 		_, _ = bot.Send(msg)
-		users[exist].command = ""
+		users[exist].Command = ""
 
 	}
 }
