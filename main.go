@@ -128,7 +128,6 @@ func main() {
 			if err != nil {
 				fmt.Println(err.Error())
 			}
-			defer resp.Body.Close()
 			//body, err := ioutil.ReadAll(resp.Body)
 			//if err != nil {
 			//	fmt.Println(err.Error())
@@ -137,8 +136,14 @@ func main() {
 			if err != nil {
 				fmt.Println(err.Error())
 			}
-			defer out.Close()
 			_, err = io.Copy(out, resp.Body)
+			if err = out.Close(); err!=nil{
+				fmt.Println(err.Error())
+			}
+			if err = resp.Body.Close(); err!=nil {
+				fmt.Println(err.Error())
+
+			}
 			files, err := arch.Unzip("arch.zip", "fromZip")
 			if err != nil {
 				fmt.Println(err.Error())
@@ -153,6 +158,7 @@ func main() {
 				_, _ = bot.Send(msg)
 			}
 			users[exist].Command = ""
+
 			err = arch.MyDelete("arch.zip")
 			if err != nil {
 				fmt.Println(err.Error())
