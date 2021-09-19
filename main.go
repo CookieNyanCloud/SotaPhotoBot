@@ -25,7 +25,6 @@ const (
 	//stiker      = "photo/stiker.png"
 	//newstick    = "photo/newstick.png"
 	urlPhoto = "http://localhost:8090/getphoto"
-
 )
 
 
@@ -57,10 +56,6 @@ func main() {
 	users := make([]UsersState, 0, 25)
 
 	for update := range updates {
-
-
-
-
 
 		exist := -1
 		userkol := 0
@@ -149,6 +144,7 @@ func main() {
 				fmt.Println(err.Error())
 			}
 			fmt.Println(files)
+
 			for _, v:= range files{
 				//msg := tgbotapi.NewPhotoUpload(update.Message.Chat.ID, v)
 				//msg.ReplyToMessageID = update.Message.MessageID
