@@ -18,7 +18,7 @@ func StartSotaBot(tokenS string) (*tgbotapi.BotAPI,tgbotapi.UpdatesChannel)  {
 	bot.Debug = true
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 	u := tgbotapi.NewUpdate(0)
-	u.Timeout = 60
+	u.Timeout = 600
 	updates, err := bot.GetUpdatesChan(u)
 	if err != nil {
 		println(err)

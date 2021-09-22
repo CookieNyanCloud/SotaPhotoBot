@@ -13,21 +13,22 @@ import (
 	"image/jpeg"
 	"image/png"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"os"
+	"strings"
 )
 
 const (
-	stikercent = "photo/cetn.png"
-	stikerbok  = "photo/chert.png"
+	stikercent  = "photo/cetn.png"
+	stikerbok   = "photo/chert.png"
 	newjpg      = "photo/new.jpg"
 	watermarked = "photo/watermarked.jpeg"
 	//stiker      = "photo/stiker.png"
 	//newstick    = "photo/newstick.png"
-	urlPhoto = "http://localhost:8090/getphoto"
+	urlPhotoGet = "http://localhost:8090/getphoto"
+	urlPhotoSet = "http://localhost:8090/sendphoto"
 )
-
-
 
 const (
 	cb  = "1"
@@ -37,11 +38,12 @@ const (
 	sg  = "5"
 	sw  = "6"
 	sch = "7"
+	pht = "8"
 )
 
 const (
 	tokenA = "TOKEN_A"
-	tokenB ="TOKEN_B"
+	tokenB = "TOKEN_B"
 )
 
 type UsersState struct {
@@ -114,12 +116,10 @@ func main() {
 			varstick = stikerbok
 		case sch:
 			postBody, _ := json.Marshal(map[string]string{
-				"name":  update.Message.Text,
+				"name": update.Message.Text,
 			})
 			responseBody := bytes.NewBuffer(postBody)
-
-
-			resp, err := http.Post(urlPhoto, "application/json", responseBody)
+			resp, err := http.Post(urlPhotoGet, "application/json", responseBody)
 			if err != nil {
 				fmt.Println(err.Error())
 			}
@@ -132,10 +132,10 @@ func main() {
 				fmt.Println(err.Error())
 			}
 			_, err = io.Copy(out, resp.Body)
-			if err = out.Close(); err!=nil{
+			if err = out.Close(); err != nil {
 				fmt.Println(err.Error())
 			}
-			if err = resp.Body.Close(); err!=nil {
+			if err = resp.Body.Close(); err != nil {
 				fmt.Println(err.Error())
 
 			}
@@ -145,7 +145,7 @@ func main() {
 			}
 			fmt.Println(files)
 
-			for _, v:= range files{
+			for _, v := range files {
 				//msg := tgbotapi.NewPhotoUpload(update.Message.Chat.ID, v)
 				//msg.ReplyToMessageID = update.Message.MessageID
 				//_, _ = bot.Send(msg)
@@ -165,6 +165,57 @@ func main() {
 			}
 
 			continue
+		case pht:
+
+			data := strings.Split(update.Message.Caption, ",")
+			phUrl, err := bot.GetFileDirectURL(update.Message.Document.FileID)
+			err = DownloadFile(phUrl, data[0]+".jpg")
+			if err != nil {
+				err.Error()
+			}
+			println("1")
+			file, err:= os.Open(data[0]+".jpg")
+			//value := map[string]io.Reader{
+			//	"file":  file,
+			//}
+			//var b bytes.Buffer
+			//w := multipart.NewWriter(&b)
+			//multipart/form-data
+			//multipart/form-data
+			//multipart/form-data
+			resp, err := http.Post(urlPhotoSet+"?author="+data[1], "binary", file)
+
+			println("2")
+			if err != nil {
+				fmt.Println(err.Error())
+			}
+			println("3")
+			if resp.StatusCode != http.StatusOK {
+				err = fmt.Errorf("bad status: %s", resp.Status)
+			}
+			println("4")
+			println("4.1")
+
+			defer func() {
+			println("5")
+				if err =file.Close(); err!= nil {
+					fmt.Println(err.Error())
+				}
+			}()
+			defer func() {
+			println("6")
+				if err=resp.Body.Close(); err!= nil {
+					fmt.Println(err.Error())
+				}
+			}()
+			defer func() {
+			println("7")
+				if err=arch.MyDelete(data[0]+".jpg"); err!= nil {
+					fmt.Println(err.Error())
+				}
+			}()
+
+			continue
 		default:
 			varstick = stikerbok
 
@@ -182,7 +233,6 @@ func main() {
 		defer imgb.Close()
 
 		println(users[exist].Command)
-
 
 		widthF, heightF := getImageDimension(filename)
 
@@ -291,3 +341,42 @@ func DownloadFile(URL, fileName string) error {
 	return nil
 }
 
+func Upload(values map[string]io.Reader) (err error) {
+	// Prepare a form that you will submit to that URL.
+	var b bytes.Buffer
+	w := multipart.NewWriter(&b)
+	for key, r := range values {
+		var fw io.Writer
+		if x, ok := r.(io.Closer); ok {
+			defer x.Close()
+		}
+		// Add an image file
+		if x, ok := r.(*os.File); ok {
+			if fw, err = w.CreateFormFile(key, x.Name()); err != nil {
+				return
+			}
+		} else {
+			// Add other fields
+			if fw, err = w.CreateFormField(key); err != nil {
+				return
+			}
+		}
+		if _, err = io.Copy(fw, r); err != nil {
+			return err
+		}
+
+	}
+	// Don't forget to close the multipart writer.
+	// If you don't close it, your request will be missing the terminating boundary.
+	w.Close()
+
+	// Now that you have a form, you can submit it to your handler.
+	resp, err := http.Post("/sendphoto","multipart/form-data",&b)
+	if err != nil {
+		return
+	}
+	if resp.StatusCode != http.StatusOK {
+		err = fmt.Errorf("bad status: %s", resp.Status)
+	}
+	return
+}
