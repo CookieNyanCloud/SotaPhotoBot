@@ -169,45 +169,56 @@ func main() {
 
 			continue
 		case pht:
+
 			data := strings.Split(update.Message.Caption, ", ")
 			phUrl, err := bot.GetFileDirectURL(update.Message.Document.FileID)
 			err = DownloadFile(phUrl, data[0]+".jpg")
 			if err != nil {
-				fmt.Println("err downloading: ",err.Error())
+				fmt.Println("err downloading: ", err.Error())
 			}
-			file, err := os.Open(data[0]+".jpg")
+			file, err := os.Open(data[0] + ".jpg")
 			if err != nil {
-				fmt.Println("err opening file: ",err.Error())
+				fmt.Println("err opening file: ", err.Error())
 			}
 			fileContents, err := ioutil.ReadAll(file)
 			if err != nil {
-				fmt.Println("err reading file: ",err.Error())
+				fmt.Println("err reading file: ", err.Error())
 			}
 			fi, err := file.Stat()
 			if err != nil {
-				fmt.Println("err getting stat: ",err.Error())
+				fmt.Println("err getting stat: ", err.Error())
 			}
-			if err = file.Close();err != nil {
-				fmt.Println("err closing file: ",err.Error())
-			}
-			body := new(bytes.Buffer)
-			writer := multipart.NewWriter(body)
-			part, err := writer.CreateFormFile("file", fi.Name())
-			if err != nil {
-				fmt.Println("err creatFromFile: ",err.Error())
+			if err = file.Close(); err != nil {
+				fmt.Println("err closing file: ", err.Error())
 			}
 
-			if _,err = part.Write(fileContents); err != nil {
-				fmt.Println("err creatFromFile: ",err.Error())
+			body := new(bytes.Buffer)
+			writer := multipart.NewWriter(body)
+
+			part, err := writer.CreateFormFile("file", fi.Name())
+			if err != nil {
+				fmt.Println("err creatFromFile file: ", err.Error())
+			}
+			if _, err = part.Write(fileContents); err != nil {
+				fmt.Println("err creatFromFile: ", err.Error())
+			}
+
+			err = writer.WriteField("dirType", data[2])
+			if err != nil {
+				fmt.Println("err dirType: ", err.Error())
+			}
+			err = writer.WriteField("author",data[1])
+			if err != nil {
+				fmt.Println("err author: ", err.Error())
 			}
 
 			err = writer.Close()
 			if err != nil {
-				fmt.Println("err closing writer: ",err.Error())
+				fmt.Println("err closing writer: ", err.Error())
 			}
 
-			client:= &http.Client{
-				Timeout:      time.Second * 600,
+			client := &http.Client{
+				Timeout: time.Second * 600,
 			}
 			//body := &bytes.Buffer{}
 			//writer := multipart.NewWriter(body)
@@ -222,17 +233,17 @@ func main() {
 			//}
 
 			//req, err := http.NewRequest("POST", urlPhotoSet+"?author="+data[1], bytes.NewReader(body.Bytes()))
-			req, err := http.NewRequest("POST", urlPhotoSet+"?author="+data[1], body)
+			req, err := http.NewRequest("POST", urlPhotoSet, body)
 			if err != nil {
-				fmt.Println("err creating request: ",err.Error())
+				fmt.Println("err creating request: ", err.Error())
 			}
 			req.Header.Set("Content-Type", writer.FormDataContentType())
 			rsp, err := client.Do(req)
 			if err != nil {
-				fmt.Println("err making request: ",err.Error())
+				fmt.Println("err making request: ", err.Error())
 			}
 			if err = writer.Close(); err != nil {
-				fmt.Println("err closing writer: ",err.Error())
+				fmt.Println("err closing writer: ", err.Error())
 			}
 			//if err =file.Close(); err!= nil {
 			//	fmt.Println("err closing file: ",err.Error())
@@ -240,11 +251,11 @@ func main() {
 			if rsp.StatusCode != http.StatusOK {
 				log.Printf("Request failed with response code: %d", rsp.StatusCode)
 			}
-			if err=req.Body.Close(); err!= nil {
-				fmt.Println("err closing body: ",err.Error())
+			if err = req.Body.Close(); err != nil {
+				fmt.Println("err closing body: ", err.Error())
 			}
-			if err=arch.MyDelete(data[0]+".jpg"); err!= nil {
-				fmt.Println("err deleting file: ",err.Error())
+			if err = arch.MyDelete(data[0] + ".jpg"); err != nil {
+				fmt.Println("err deleting file: ", err.Error())
 			}
 			continue
 		default:
@@ -402,7 +413,7 @@ func Upload(values map[string]io.Reader) (err error) {
 	w.Close()
 
 	// Now that you have a form, you can submit it to your handler.
-	resp, err := http.Post("/sendphoto","multipart/form-data",&b)
+	resp, err := http.Post("/sendphoto", "multipart/form-data", &b)
 	if err != nil {
 		return
 	}
