@@ -172,11 +172,11 @@ func main() {
 
 			data := strings.Split(update.Message.Caption, ", ")
 			phUrl, err := bot.GetFileDirectURL(update.Message.Document.FileID)
-			err = DownloadFile(phUrl, data[0]+".jpg")
+			err = DownloadFile(phUrl, data[0]+" "+data[1] + ".jpg")
 			if err != nil {
 				fmt.Println("err downloading: ", err.Error())
 			}
-			file, err := os.Open(data[0] + ".jpg")
+			file, err := os.Open(data[0]+" "+data[1] + ".jpg")
 			if err != nil {
 				fmt.Println("err opening file: ", err.Error())
 			}
@@ -202,15 +202,15 @@ func main() {
 			if _, err = part.Write(fileContents); err != nil {
 				fmt.Println("err creatFromFile: ", err.Error())
 			}
-
-			err = writer.WriteField("dirType", data[2])
-			if err != nil {
-				fmt.Println("err dirType: ", err.Error())
-			}
 			err = writer.WriteField("author",data[1])
 			if err != nil {
 				fmt.Println("err author: ", err.Error())
 			}
+			err = writer.WriteField("dirType", data[2])
+			if err != nil {
+				fmt.Println("err dirType: ", err.Error())
+			}
+
 
 			err = writer.Close()
 			if err != nil {
@@ -220,19 +220,7 @@ func main() {
 			client := &http.Client{
 				Timeout: time.Second * 600,
 			}
-			//body := &bytes.Buffer{}
-			//writer := multipart.NewWriter(body)
-			//fw, err := writer.CreateFormFile("file", data[0]+".jpg")
-			//if err != nil {
-			//	fmt.Println("err CreateFromFile: ",err.Error())
-			//}
-			//file, err:= os.Open(data[0]+".jpg")
-			//_, err = io.Copy(fw, file)
-			//if err != nil {
-			//	fmt.Println("err opening: ",err.Error())
-			//}
 
-			//req, err := http.NewRequest("POST", urlPhotoSet+"?author="+data[1], bytes.NewReader(body.Bytes()))
 			req, err := http.NewRequest("POST", urlPhotoSet, body)
 			if err != nil {
 				fmt.Println("err creating request: ", err.Error())
@@ -245,16 +233,13 @@ func main() {
 			if err = writer.Close(); err != nil {
 				fmt.Println("err closing writer: ", err.Error())
 			}
-			//if err =file.Close(); err!= nil {
-			//	fmt.Println("err closing file: ",err.Error())
-			//}
 			if rsp.StatusCode != http.StatusOK {
 				log.Printf("Request failed with response code: %d", rsp.StatusCode)
 			}
 			if err = req.Body.Close(); err != nil {
 				fmt.Println("err closing body: ", err.Error())
 			}
-			if err = arch.MyDelete(data[0] + ".jpg"); err != nil {
+			if err = arch.MyDelete(data[0]+" "+data[1] + ".jpg"); err != nil {
 				fmt.Println("err deleting file: ", err.Error())
 			}
 			continue
