@@ -1,5 +1,4 @@
 config.go
 .env
+api.json
 .idea
-*.jpeg
-*.jpg
