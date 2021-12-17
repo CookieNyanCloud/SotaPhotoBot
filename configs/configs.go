@@ -1,14 +1,18 @@
 package configs
 
 import (
-	"github.com/joho/godotenv"
+	"encoding/json"
+	"io/ioutil"
 	"os"
+
+	"github.com/joho/godotenv"
 )
 
 const (
 	tgToken     = "TOKEN_A"
 	DrivePeople = "DRIVEAPI_PEOPLE"
 	DriveZag    = "DRIVEAPI_ZAG"
+	filePath    = "users.json"
 )
 
 type Conf struct {
@@ -27,4 +31,18 @@ func InitConf() (*Conf, error) {
 		DrivePpl: os.Getenv(DrivePeople),
 		DriveZg:  os.Getenv(DriveZag),
 	}, nil
+}
+
+func AddUser(users map[string]string, you, user string) error {
+	users[you] = "найти"
+	users[user] = "найти"
+	jsonUsers, err := json.Marshal(users)
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile(filePath, jsonUsers, 0644)
+	if err != nil {
+		return err
+	}
+	return nil
 }

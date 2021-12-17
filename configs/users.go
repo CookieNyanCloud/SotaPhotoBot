@@ -5,8 +5,8 @@ import (
 	"os"
 )
 
-func GetUsers() (map[string]int, error) {
-	var result map[string]int
+func GetUsers() (map[string]string, error) {
+	var result map[string]string
 	bytes, err := os.ReadFile("configs/users.json")
 	if err != nil {
 		return nil, err

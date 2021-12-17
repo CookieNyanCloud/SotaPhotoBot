@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -19,12 +20,13 @@ const (
 	credFile = "driveapisearch.json"
 	find     = "найти"
 	add      = "добавить"
+	addUser  = "добавить пользователя"
 )
 
 func main() {
 
 	var ctx = context.Background()
-	auth, err := configs.GetUsers()
+	users, err := configs.GetUsers()
 	if err != nil {
 		log.Fatalf("error init users: %v\n", err)
 	}
@@ -32,8 +34,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("error init conf: %v\n", err)
 	}
-
-	users := make(map[int64]string)
 
 	driveAcc, err := drive.NewService(ctx, option.WithCredentialsFile(credFile))
 	if err != nil {
@@ -49,7 +49,7 @@ func main() {
 		if update.Message == nil {
 			continue
 		}
-		_, ok := auth[update.Message.Chat.UserName]
+		_, ok := users[update.Message.Chat.UserName]
 		if !ok {
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "нет доступа")
 			_, _ = bot.Send(msg)
@@ -69,20 +69,27 @@ func main() {
 		}
 
 		if update.Message.Text == find {
-			users[update.Message.Chat.ID] = find
+			users[update.Message.Chat.UserName] = find
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "введите значение поиска")
 			_, _ = bot.Send(msg)
 			continue
 		}
 
 		if update.Message.Text == add {
-			users[update.Message.Chat.ID] = add
+			users[update.Message.Chat.UserName] = add
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "пришлите фото, тип, название, автора")
 			_, _ = bot.Send(msg)
 			continue
 		}
 
-		switch users[update.Message.Chat.ID] {
+		if update.Message.Text == addUser {
+			users[update.Message.Chat.UserName] = addUser
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "пришлите ник")
+			_, _ = bot.Send(msg)
+			continue
+		}
+
+		switch users[update.Message.Chat.UserName] {
 
 		case find:
 			files, err := driveSrv.GetPhotos(update.Message.Text)
@@ -133,7 +140,7 @@ func main() {
 				return
 			}
 			var folder string
-			switch nameDir[0] {
+			switch strings.ToLower(nameDir[0]) {
 			case "з":
 				folder = conf.DriveZg
 			case "л":
@@ -162,9 +169,24 @@ func main() {
 				),
 			)
 			_, _ = bot.Send(msg)
-			continue
-		}
+		case addUser:
+			name := strings.ReplaceAll(update.Message.Text, "@", "")
+			err := configs.AddUser(users, update.Message.From.UserName, name)
+			if err != nil {
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintln("in case pushUser:", err))
+				_, _ = bot.Send(msg)
+				fmt.Println("in case pushUser:", err)
+			}
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "добавлен")
+			msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(
+				tgbotapi.NewKeyboardButtonRow(
+					tgbotapi.NewKeyboardButton(find),
+					tgbotapi.NewKeyboardButton(add),
+				),
+			)
+			_, _ = bot.Send(msg)
 
+		}
 	}
 }
 
