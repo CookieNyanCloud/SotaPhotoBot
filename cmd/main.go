@@ -62,6 +62,7 @@ func main() {
 				tgbotapi.NewKeyboardButtonRow(
 					tgbotapi.NewKeyboardButton(find),
 					tgbotapi.NewKeyboardButton(add),
+					tgbotapi.NewKeyboardButton(addUser),
 				),
 			)
 			_, _ = bot.Send(msg)
@@ -99,6 +100,8 @@ func main() {
 					tgbotapi.NewKeyboardButtonRow(
 						tgbotapi.NewKeyboardButton(find),
 						tgbotapi.NewKeyboardButton(add),
+						tgbotapi.NewKeyboardButton(addUser),
+
 					),
 				)
 				_, _ = bot.Send(msg)
@@ -124,6 +127,8 @@ func main() {
 					tgbotapi.NewKeyboardButtonRow(
 						tgbotapi.NewKeyboardButton(find),
 						tgbotapi.NewKeyboardButton(add),
+						tgbotapi.NewKeyboardButton(addUser),
+
 					),
 				)
 				_, _ = bot.Send(msg)
@@ -156,6 +161,8 @@ func main() {
 					tgbotapi.NewKeyboardButtonRow(
 						tgbotapi.NewKeyboardButton(find),
 						tgbotapi.NewKeyboardButton(add),
+						tgbotapi.NewKeyboardButton(addUser),
+
 					),
 				)
 				_, _ = bot.Send(msg)
@@ -166,6 +173,8 @@ func main() {
 				tgbotapi.NewKeyboardButtonRow(
 					tgbotapi.NewKeyboardButton(find),
 					tgbotapi.NewKeyboardButton(add),
+					tgbotapi.NewKeyboardButton(addUser),
+
 				),
 			)
 			_, _ = bot.Send(msg)
@@ -182,6 +191,8 @@ func main() {
 				tgbotapi.NewKeyboardButtonRow(
 					tgbotapi.NewKeyboardButton(find),
 					tgbotapi.NewKeyboardButton(add),
+					tgbotapi.NewKeyboardButton(addUser),
+
 				),
 			)
 			_, _ = bot.Send(msg)
