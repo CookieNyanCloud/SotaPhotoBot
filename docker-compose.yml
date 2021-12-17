@@ -1,0 +1,8 @@
+version: '3.3'
+
+services:
+  photosotabot:
+    image: photosotabot
+    build: ./
+    env_file:
+      - .env

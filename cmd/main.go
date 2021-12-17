@@ -3,22 +3,20 @@ package main
 import (
 	"context"
 	"errors"
+	"log"
+	"net/http"
+	"strings"
+
 	"github.com/cookienyancloud/photoSota/configs"
 	"github.com/cookienyancloud/photoSota/driveService"
 	"github.com/cookienyancloud/photoSota/tgBot"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"google.golang.org/api/drive/v3"
 	"google.golang.org/api/option"
-	"io"
-	"log"
-	"net/http"
-	"os"
-	"strings"
 )
 
-
 const (
-	credFile = "api.json"
+	credFile = "driveapisearch.json"
 	find     = "найти"
 	add      = "добавить"
 )
@@ -26,7 +24,10 @@ const (
 func main() {
 
 	var ctx = context.Background()
-
+	auth, err := configs.GetUsers()
+	if err != nil {
+		log.Fatalf("error init users: %v\n", err)
+	}
 	conf, err := configs.InitConf()
 	if err != nil {
 		log.Fatalf("error init conf: %v\n", err)
@@ -38,8 +39,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Unable to parse credantials file: %v", err)
 	}
-	driveSrv := driveService.NewDriveService(driveAcc, conf.DrivePpl, conf.DriveZg)
-
+	driveSrv := driveService.NewDriveService(driveAcc)
 	bot, updates, err := tgBot.StartBot(conf.TgToken)
 	if err != nil {
 		log.Fatalf("error connecting to bot: %v", err)
@@ -47,6 +47,12 @@ func main() {
 	for update := range updates {
 
 		if update.Message == nil {
+			continue
+		}
+		_, ok := auth[update.Message.Chat.UserName]
+		if !ok {
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "нет доступа")
+			_, _ = bot.Send(msg)
 			continue
 		}
 
@@ -91,23 +97,21 @@ func main() {
 				_, _ = bot.Send(msg)
 				continue
 			}
-			for _, file := range files {
+			for _, resp := range files {
 				msg := tgbotapi.NewDocument(update.Message.Chat.ID, &tgbotapi.FileReader{
-					Name:   file.Name(),
-					Reader: &file,
+					Name:   "filefromdrive.jpg",
+					Reader: resp.Body,
 				})
-				msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(
-					tgbotapi.NewKeyboardButtonRow(
-						tgbotapi.NewKeyboardButton(find),
-						tgbotapi.NewKeyboardButton(add),
-					),
-				)
 				_, _ = bot.Send(msg)
+				err := resp.Body.Close()
+				if err != nil {
+					log.Printf("err closing body: %v", err)
+				}
 			}
 
 		case add:
 			nameDir := strings.Split(update.Message.Caption, ",")
-			if len(nameDir) != 3 || update.Message.Document.FileID == "" {
+			if len(nameDir) != 3 || update.Message.Document == nil {
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "не формат")
 				msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(
 					tgbotapi.NewKeyboardButtonRow(
@@ -164,23 +168,25 @@ func main() {
 	}
 }
 
-func downloadFile(URL string) (os.File, error) {
-	var file os.File
+func downloadFile(URL string) (*http.Response, error) {
+	//var file os.File
 	response, err := http.Get(URL)
 	if err != nil {
-		return os.File{}, err
+		//return os.File{}, err
+		return nil, err
 	}
-	defer response.Body.Close()
+	//defer response.Body.Close()
 
 	if response.StatusCode != 200 {
-		return os.File{}, errors.New("received non 200 response code")
+		//return os.File{}, errors.New("received non 200 response code")
+		return nil, errors.New("received non 200 response code")
 	}
+	//
+	////Write the bytes to the fiel
+	//_, err = io.Copy(&file, response.Body)
+	//if err != nil {
+	//	return os.File{}, err
+	//}
 
-	//Write the bytes to the fiel
-	_, err = io.Copy(&file, response.Body)
-	if err != nil {
-		return os.File{}, err
-	}
-
-	return file, nil
+	return response, nil
 }

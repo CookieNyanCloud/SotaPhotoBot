@@ -1,6 +1,7 @@
 package configs
 
 import (
+	"github.com/joho/godotenv"
 	"os"
 )
 
@@ -17,6 +18,10 @@ type Conf struct {
 }
 
 func InitConf() (*Conf, error) {
+	err := godotenv.Load(".env")
+	if err != nil {
+		return &Conf{}, err
+	}
 	return &Conf{
 		TgToken:  os.Getenv(tgToken),
 		DrivePpl: os.Getenv(DrivePeople),
