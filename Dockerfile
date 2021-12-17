@@ -8,6 +8,6 @@ COPY ./ ./
 
 RUN go mod download
 
-RUN go build -o photosotabot ./main.go
+RUN go build -o photosotabot ./cmd/main.go
 
 CMD ["./photosotabot"]
