@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/cookienyancloud/photoSota/configs"
@@ -93,7 +94,7 @@ func main() {
 		switch users[update.Message.Chat.UserName] {
 
 		case find:
-			files, err := driveSrv.GetPhotos(update.Message.Text)
+			files, names, err := driveSrv.GetPhotos(update.Message.Text)
 			if err != nil {
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, err.Error())
 				msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(
@@ -107,9 +108,24 @@ func main() {
 				_, _ = bot.Send(msg)
 				continue
 			}
-			for _, resp := range files {
+			start := tgbotapi.NewMessage(update.Message.Chat.ID, "всего: "+strconv.Itoa(len(files)))
+			_, _ = bot.Send(start)
+			for i, resp := range files {
+				if resp.Body == nil {
+					msg := tgbotapi.NewMessage(update.Message.Chat.ID, "что-то пошло не так с клоичеством")
+					msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(
+						tgbotapi.NewKeyboardButtonRow(
+							tgbotapi.NewKeyboardButton(find),
+							tgbotapi.NewKeyboardButton(add),
+							tgbotapi.NewKeyboardButton(addUser),
+
+						),
+					)
+					_, _ = bot.Send(msg)
+					continue
+				}
 				msg := tgbotapi.NewDocument(update.Message.Chat.ID, &tgbotapi.FileReader{
-					Name:   "filefromdrive.jpg",
+					Name:   names[i],
 					Reader: resp.Body,
 				})
 				_, _ = bot.Send(msg)
@@ -118,7 +134,8 @@ func main() {
 					log.Printf("err closing body: %v", err)
 				}
 			}
-
+			end := tgbotapi.NewMessage(update.Message.Chat.ID, "все")
+			_, _ = bot.Send(end)
 		case add:
 			nameDir := strings.Split(update.Message.Caption, ",")
 			if len(nameDir) != 3 || update.Message.Document == nil {

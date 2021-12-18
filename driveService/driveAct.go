@@ -21,43 +21,45 @@ func NewDriveService(srv *drive.Service) IDrive {
 }
 
 type IDrive interface {
-	GetPhotos(name string) ([]*http.Response, error)
+	GetPhotos(name string) ([]*http.Response, []string, error)
 	SendPhotos(name, folder string, file *http.Response) error
 	FindPhoto(name string) (*drive.FileList, error)
-	Load(r *drive.File, wg *sync.WaitGroup) (*http.Response, error)
+	Load(r *drive.File, wg *sync.WaitGroup) (*http.Response, string, error)
 }
 
-func (srv *DriveService) GetPhotos(name string) ([]*http.Response, error) {
+func (srv *DriveService) GetPhotos(name string) ([]*http.Response, []string, error) {
 
 	if len(name) < 7 {
 		log.Printf("too short name: %v\n", len(name))
-		return nil, errors.New("too short name")
+		return nil, nil, errors.New("too short name")
 	}
 
 	r, err := srv.FindPhoto(name)
 	if err != nil {
 		log.Printf("Unable to retrieve files: %v\n", err)
-		return nil, errors.New("unable to retrieve files")
+		return nil, nil, errors.New("unable to retrieve files")
 	}
 	fileslist := make([]*http.Response, len(r.Files))
+	filesName := make([]string, len(r.Files))
 	if len(r.Files) == 0 {
 		log.Println("No files found")
-		return nil, errors.New("no files found")
+		return nil, nil, errors.New("no files found")
 	} else {
 		var wg sync.WaitGroup
 		for i, driveFile := range r.Files {
 			wg.Add(1)
 			go func(srv *DriveService, driveFile *drive.File, wg *sync.WaitGroup, i int) {
-				fileName, err := srv.Load(driveFile, wg)
+				fileName, name, err := srv.Load(driveFile, wg)
 				if err != nil {
 					log.Printf("unable to retrieve files: %v\n", err)
 				}
 				fileslist[i] = fileName
+				filesName[i] = name
 			}(srv, driveFile, &wg, i)
 		}
 		wg.Wait()
 	}
-	return fileslist, nil
+	return fileslist, filesName, nil
 }
 
 func (srv *DriveService) SendPhotos(name, folder string, file *http.Response) error {
@@ -101,13 +103,13 @@ func (srv *DriveService) FindPhoto(name string) (*drive.FileList, error) {
 	return r, err
 }
 
-func (srv *DriveService) Load(r *drive.File, wg *sync.WaitGroup) (*http.Response, error) {
+func (srv *DriveService) Load(r *drive.File, wg *sync.WaitGroup) (*http.Response, string, error) {
 	log.Println(r.Name, "start")
 	res, err := srv.Srv.Files.Get(r.Id).Download()
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	wg.Done()
 	log.Println(r.Name, "end")
-	return res, nil
+	return res, r.Name, nil
 }
